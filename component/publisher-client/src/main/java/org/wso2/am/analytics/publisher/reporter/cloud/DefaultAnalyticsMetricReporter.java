@@ -45,6 +45,7 @@ public class DefaultAnalyticsMetricReporter extends AbstractMetricReporter {
 
     public DefaultAnalyticsMetricReporter(Map<String, String> properties) throws MetricCreationException {
         super(properties);
+        log.info("Initializing DefaultAnalyticsMetricReporter");
         int queueSize = Constants.DEFAULT_QUEUE_SIZE;
         int workerThreads = Constants.DEFAULT_WORKER_THREADS;
         int flushingDelay = Constants.DEFAULT_FLUSHING_DELAY;
@@ -57,11 +58,19 @@ public class DefaultAnalyticsMetricReporter extends AbstractMetricReporter {
         if (properties.get(Constants.CLIENT_FLUSHING_DELAY) != null) {
             flushingDelay = Integer.parseInt(properties.get(Constants.CLIENT_FLUSHING_DELAY));
         }
+        if (log.isDebugEnabled()) {
+            log.debug("Reporter configuration - Queue size: " + queueSize + ", Worker threads: " + workerThreads 
+                    + ", Flushing delay: " + flushingDelay + "ms");
+        }
         String authToken = properties.get(Constants.AUTH_API_TOKEN);
         String authEndpoint = properties.get(Constants.AUTH_API_URL);
+        log.debug("Creating retry options for EventHub client");
         AmqpRetryOptions retryOptions = createRetryOptions(properties);
+        log.debug("Creating EventHub client");
         EventHubClient client = new EventHubClient(authEndpoint, authToken, retryOptions, properties);
+        log.debug("Initializing event queue");
         eventQueue = new EventQueue(queueSize, workerThreads, client, flushingDelay);
+        log.info("DefaultAnalyticsMetricReporter initialized successfully");
     }
 
     private AmqpRetryOptions createRetryOptions(Map<String, String> properties) {

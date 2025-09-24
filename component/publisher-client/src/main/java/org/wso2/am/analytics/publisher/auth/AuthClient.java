@@ -24,6 +24,8 @@ import feign.RetryableException;
 import feign.gson.GsonDecoder;
 import feign.gson.GsonEncoder;
 import feign.slf4j.Slf4jLogger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.wso2.am.analytics.publisher.exception.ConnectionRecoverableException;
 import org.wso2.am.analytics.publisher.exception.ConnectionUnrecoverableException;
 import org.wso2.am.analytics.publisher.util.Constants;
@@ -34,15 +36,21 @@ import java.util.Map;
  * Auth client to generate SAS token that can use to authenticate with event hub.
  */
 public class AuthClient {
+    private static final Logger log = LogManager.getLogger(AuthClient.class);
     public static final String AUTH_HEADER = "Authorization";
 
     public static String getSASToken(String authEndpoint, String token, Map<String, String> properties)
             throws ConnectionRecoverableException, ConnectionUnrecoverableException {
 
+        if (log.isDebugEnabled()) {
+            log.debug("Generating SAS token for auth endpoint: " + (authEndpoint != null ? "[CONFIGURED]" : "[NULL]"));
+        }
+
         String isProxyEnabled = properties.get(Constants.PROXY_ENABLE);
         DefaultApi defaultApi;
 
         if (Boolean.parseBoolean(isProxyEnabled)) {
+            log.info("Using proxy configuration for authentication");
             defaultApi = Feign.builder().client(AuthProxyUtils.getClient(properties))
                     .encoder(new GsonEncoder())
                     .decoder(new GsonDecoder())
@@ -50,6 +58,7 @@ public class AuthClient {
                     .requestInterceptor(requestTemplate -> requestTemplate.header(AUTH_HEADER, "Bearer " + token))
                     .target(DefaultApi.class, authEndpoint);
         } else {
+            log.info("Using direct connection for authentication");
             defaultApi = Feign.builder()
                     .encoder(new GsonEncoder())
                     .decoder(new GsonDecoder())
@@ -59,12 +68,14 @@ public class AuthClient {
         }
         try {
             TokenDetailsDTO dto = defaultApi.tokenGet();
+            log.info("SAS token generated successfully");
             return dto.getToken();
         } catch (FeignException.Unauthorized e) {
             throw new ConnectionUnrecoverableException(
                     "Invalid/expired user token. Please update apim.analytics"
                             + ".auth_token in configuration and restart the instance", e);
         } catch (RetryableException e) {
+            log.warn("Authentication endpoint is not reachable, will retry");
             throw new ConnectionRecoverableException("Provided authentication endpoint " + authEndpoint + " is not "
                                                              + "reachable.");
         } catch (IllegalArgumentException e) {

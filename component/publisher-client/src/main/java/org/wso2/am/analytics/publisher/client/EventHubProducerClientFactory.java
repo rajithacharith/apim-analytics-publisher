@@ -49,44 +49,63 @@ public class EventHubProducerClientFactory {
     public static EventHubProducerClient create(String authEndpoint, String authToken, AmqpRetryOptions retryOptions,
                                                 Map<String, String> properties)
             throws ConnectionRecoverableException, ConnectionUnrecoverableException {
+        log.info("Creating EventHub producer client");
         TokenCredential tokenCredential = new WSO2TokenCredential(authEndpoint, authToken, properties);
         String tempSASToken;
         // generate SAS token to get eventhub meta data
+        log.debug("Generating SAS token for EventHub metadata");
         tempSASToken = getSASToken(authEndpoint, authToken, properties);
 
         String resourceURI = getResourceURI(tempSASToken);
         String fullyQualifiedNamespace = getNamespace(resourceURI);
         String eventhubName = getEventHubName(resourceURI);
+        if (log.isDebugEnabled()) {
+            log.debug("Extracted EventHub details - Namespace: " + fullyQualifiedNamespace + ", EventHub: " 
+                    + eventhubName);
+        }
 
         String isProxyEnabled = properties.get(Constants.PROXY_ENABLE);
         if (Boolean.parseBoolean(isProxyEnabled)) {
+            log.info("Configuring EventHub client with proxy settings");
             String proxyHost = properties.get(Constants.PROXY_HOST);
             int proxyPort = Integer.parseInt(properties.get(Constants.PROXY_PORT));
             String proxyUsername = properties.get(Constants.PROXY_USERNAME);
             String proxyPassword = properties.get(Constants.PROXY_PASSWORD);
 
+            if (log.isDebugEnabled()) {
+                log.debug("Proxy configuration - Host: " + proxyHost + ", Port: " + proxyPort + ", Auth: " 
+                        + (!StringUtils.isBlank(proxyUsername) ? "BASIC" : "NONE"));
+            }
+
             SocketAddress address = new InetSocketAddress(proxyHost, proxyPort);
             Proxy proxyAddress = new Proxy(Proxy.Type.HTTP, address);
             ProxyOptions proxyOptions;
             if (!StringUtils.isBlank(proxyUsername) && !StringUtils.isBlank(proxyPassword)) {
+                log.debug("Setting up proxy with BASIC authentication");
                 proxyOptions =
                         new ProxyOptions(ProxyAuthenticationType.BASIC, proxyAddress, proxyUsername, proxyPassword);
             } else {
+                log.debug("Setting up proxy without authentication");
                 proxyOptions =
                         new ProxyOptions(ProxyAuthenticationType.NONE, proxyAddress, null, null);
             }
 
-            return new EventHubClientBuilder()
+            EventHubProducerClient client = new EventHubClientBuilder()
                     .credential(fullyQualifiedNamespace, eventhubName, tokenCredential)
                     .proxyOptions(proxyOptions)
                     .retry(retryOptions)
                     .transportType(AmqpTransportType.AMQP_WEB_SOCKETS)
                     .buildProducerClient();
+            log.info("EventHub producer client created successfully with proxy configuration");
+            return client;
         } else {
-            return new EventHubClientBuilder()
+            log.info("Configuring EventHub client without proxy");
+            EventHubProducerClient client = new EventHubClientBuilder()
                     .credential(fullyQualifiedNamespace, eventhubName, tokenCredential)
                     .retry(retryOptions)
                     .buildProducerClient();
+            log.info("EventHub producer client created successfully");
+            return client;
         }
     }
 
@@ -102,6 +121,7 @@ public class EventHubProducerClientFactory {
      * @return decoded resource URI from the token
      */
     private static String getResourceURI(String sasToken) {
+        log.debug("Extracting resource URI from SAS token");
         String[] sasAttributes = sasToken.split("&");
         String[] resource = sasAttributes[0].split("=");
         String resourceURI = "";
@@ -111,7 +131,11 @@ public class EventHubProducerClientFactory {
             //never happens
         }
         //remove protocol append
-        return resourceURI.replace("sb://", "");
+        String cleanResourceURI = resourceURI.replace("sb://", "");
+        if (log.isDebugEnabled()) {
+            log.debug("Resource URI extracted: " + cleanResourceURI);
+        }
+        return cleanResourceURI;
     }
 
     private static String getNamespace(String resourceURI) {

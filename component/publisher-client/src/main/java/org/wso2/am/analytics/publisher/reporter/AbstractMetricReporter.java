@@ -35,9 +35,12 @@ public abstract class AbstractMetricReporter implements MetricReporter {
     private Map<String, Metric> metricRegistry;
 
     protected AbstractMetricReporter(Map<String, String> properties) throws MetricCreationException {
+        log.info("Initializing metric reporter with configuration");
         this.properties = properties;
         metricRegistry = new HashMap<>();
+        log.debug("Validating configuration properties");
         validateConfigProperties(properties);
+        log.info("Metric reporter initialized successfully");
     }
 
     /**
@@ -60,9 +63,14 @@ public abstract class AbstractMetricReporter implements MetricReporter {
         if (metric == null) {
             synchronized (this) {
                 if (metricRegistry.get(name) == null) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Creating new counter metric: " + name);
+                    }
                     metric = createCounter(name, schema);
                     metricRegistry.put(name, metric);
+                    log.info("Counter metric created successfully: " + name);
                 } else {
+                    log.debug("Counter metric already exists in registry: " + name);
                     metric = metricRegistry.get(name);
                 }
             }
@@ -84,9 +92,14 @@ public abstract class AbstractMetricReporter implements MetricReporter {
         if (metric == null) {
             synchronized (this) {
                 if (metricRegistry.get(name) == null) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Creating new timer metric: " + name);
+                    }
                     metric = createTimer(name);
                     metricRegistry.put(name, metric);
+                    log.info("Timer metric created successfully: " + name);
                 } else {
+                    log.debug("Timer metric already exists in registry: " + name);
                     metric = metricRegistry.get(name);
                 }
             }
