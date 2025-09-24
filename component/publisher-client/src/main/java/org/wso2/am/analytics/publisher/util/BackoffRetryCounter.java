@@ -18,10 +18,14 @@
 
 package org.wso2.am.analytics.publisher.util;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 /**
  * Util class to implement backoff retrying.
  */
 public class BackoffRetryCounter {
+    private static final Logger log = LogManager.getLogger(BackoffRetryCounter.class);
     private final String[] timeIntervalNames = new String[]{"5 sec", "10 sec", "15 sec", "30 sec", "1 min", "1 min",
                                                             "2 min", "5 min"};
     private final long[] timeIntervals = new long[]{5000, 10000, 15000, 30000, 60000, 60000, 120000, 300000};
@@ -29,16 +33,26 @@ public class BackoffRetryCounter {
     private int intervalIndex = 0;
 
     public synchronized void reset() {
+        log.debug("Resetting retry backoff counter to initial interval");
         intervalIndex = 0;
     }
 
     public synchronized void increment() {
         if (intervalIndex < timeIntervals.length - 1) {
             intervalIndex++;
+            if (log.isDebugEnabled()) {
+                log.debug("Incremented retry interval to: " + timeIntervalNames[intervalIndex]);
+            }
+        } else {
+            log.info("Maximum retry interval reached: " + timeIntervalNames[intervalIndex]);
         }
     }
 
     public long getTimeIntervalMillis() {
+        if (log.isDebugEnabled()) {
+            log.debug("Current retry interval: " + timeIntervalNames[intervalIndex] + " (" 
+                    + timeIntervals[intervalIndex] + " ms)");
+        }
         return timeIntervals[intervalIndex];
     }
 
