@@ -49,6 +49,7 @@ public class MetricReporterFactory {
         if (reporterRegistry.get(Constants.DEFAULT_REPORTER) == null) {
             synchronized (this) {
                 if (reporterRegistry.get(Constants.DEFAULT_REPORTER) == null) {
+                    log.info("Creating new DefaultAnalyticsMetricReporter instance");
                     MetricReporter reporterInstance = new DefaultAnalyticsMetricReporter(properties);
                     reporterRegistry.put(Constants.DEFAULT_REPORTER, reporterInstance);
                     return reporterInstance;
@@ -65,6 +66,7 @@ public class MetricReporterFactory {
         if (reporterRegistry.get(Constants.ELK_REPORTER) == null) {
             synchronized (this) {
                 if (reporterRegistry.get(Constants.ELK_REPORTER) == null) {
+                    log.info("Creating new ELKMetricReporter instance");
                     MetricReporter reporterInstance = new ELKMetricReporter(properties);
                     reporterRegistry.put(Constants.ELK_REPORTER, reporterInstance);
                     return reporterInstance;
@@ -90,10 +92,12 @@ public class MetricReporterFactory {
                             Constructor<MetricReporter> constructor =
                                     clazz.getConstructor(Map.class);
                             MetricReporter reporterInstance = constructor.newInstance(properties);
+                            log.info("Created new custom MetricReporter instance: " + fullyQualifiedClassName);
                             reporterRegistry.put(fullyQualifiedClassName, reporterInstance);
                             return reporterInstance;
                         } catch (InstantiationException | IllegalAccessException | ClassNotFoundException
                                  | NoSuchMethodException | InvocationTargetException e) {
+                            log.error("Failed to create MetricReporter of type: " + fullyQualifiedClassName, e);
                             throw new MetricCreationException("Error occurred while creating a Metric Reporter of type"
                                     + " " + fullyQualifiedClassName, e);
                         }

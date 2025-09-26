@@ -35,6 +35,9 @@ public abstract class AbstractMetricReporter implements MetricReporter {
     private Map<String, Metric> metricRegistry;
 
     protected AbstractMetricReporter(Map<String, String> properties) throws MetricCreationException {
+        if (log.isDebugEnabled()) {
+            log.debug("Initializing AbstractMetricReporter");
+        }
         this.properties = properties;
         metricRegistry = new HashMap<>();
         validateConfigProperties(properties);
@@ -60,6 +63,9 @@ public abstract class AbstractMetricReporter implements MetricReporter {
         if (metric == null) {
             synchronized (this) {
                 if (metricRegistry.get(name) == null) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Creating new counter metric: " + name);
+                    }
                     metric = createCounter(name, schema);
                     metricRegistry.put(name, metric);
                 } else {
@@ -84,6 +90,9 @@ public abstract class AbstractMetricReporter implements MetricReporter {
         if (metric == null) {
             synchronized (this) {
                 if (metricRegistry.get(name) == null) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Creating new timer metric: " + name);
+                    }
                     metric = createTimer(name);
                     metricRegistry.put(name, metric);
                 } else {
@@ -92,8 +101,8 @@ public abstract class AbstractMetricReporter implements MetricReporter {
             }
         }
         if (!(metric instanceof TimerMetric)) {
-            log.error("Counter Metric with the same name already exists. Please use a different name");
-            return null;
+            log.error("Counter Metric with the same name already exists. Please use a different name for: " + name);
+            throw new RuntimeException("Counter Metric with the same name already exists: " + name);
         } else {
             return (TimerMetric) metric;
         }

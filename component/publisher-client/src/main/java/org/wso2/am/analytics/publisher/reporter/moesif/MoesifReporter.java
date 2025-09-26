@@ -41,6 +41,7 @@ public class MoesifReporter extends AbstractMetricReporter {
 
     public MoesifReporter(Map<String, String> properties) throws MetricCreationException {
         super(properties);
+        log.info("Initializing MoesifReporter");
         int queueSize = Constants.DEFAULT_QUEUE_SIZE;
         int workerThreads = Constants.DEFAULT_WORKER_THREADS;
         if (properties.get(Constants.QUEUE_SIZE) != null) {
@@ -50,9 +51,15 @@ public class MoesifReporter extends AbstractMetricReporter {
             workerThreads = Integer.parseInt(properties.get(Constants.WORKER_THREAD_COUNT));
         }
         if (properties.get(Constants.TYPE).equals(Constants.MOESIF)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Initializing MoesifReporter with direct moesif key configuration");
+            }
             String moesifKey = properties.get(Constants.MOESIF_KEY);
             this.eventQueue = new EventQueue(queueSize, workerThreads, moesifKey);
         } else {
+            if (log.isDebugEnabled()) {
+                log.debug("Initializing MoesifReporter with microservice configuration");
+            }
             String moesifBasePath = properties.get(
                     MoesifMicroserviceConstants.MOESIF_PROTOCOL_WITH_FQDN_KEY) + properties.get(
                     MoesifMicroserviceConstants.MOESIF_MS_VERSIONING_KEY);
@@ -63,9 +70,9 @@ public class MoesifReporter extends AbstractMetricReporter {
             this.eventQueue = new EventQueue(queueSize, workerThreads, keyRetriever);
 
             MissedEventHandler missedEventHandler = new MissedEventHandler(keyRetriever);
-            // execute MissedEventHandler periodically.
             Timer timer = new Timer();
             timer.schedule(missedEventHandler, 0, MoesifMicroserviceConstants.PERIODIC_CALL_DELAY);
+            log.info("Started MissedEventHandler timer for periodic key refresh");
         }
     }
 

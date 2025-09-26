@@ -24,6 +24,8 @@ import feign.RetryableException;
 import feign.gson.GsonDecoder;
 import feign.gson.GsonEncoder;
 import feign.slf4j.Slf4jLogger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.wso2.am.analytics.publisher.exception.ConnectionRecoverableException;
 import org.wso2.am.analytics.publisher.exception.ConnectionUnrecoverableException;
 import org.wso2.am.analytics.publisher.util.Constants;
@@ -34,11 +36,12 @@ import java.util.Map;
  * Auth client to generate SAS token that can use to authenticate with event hub.
  */
 public class AuthClient {
+    private static final Logger log = LogManager.getLogger(AuthClient.class);
     public static final String AUTH_HEADER = "Authorization";
 
     public static String getSASToken(String authEndpoint, String token, Map<String, String> properties)
             throws ConnectionRecoverableException, ConnectionUnrecoverableException {
-
+        log.info("Starting SAS token generation for endpoint: " + authEndpoint);
         String isProxyEnabled = properties.get(Constants.PROXY_ENABLE);
         DefaultApi defaultApi;
 
@@ -59,18 +62,24 @@ public class AuthClient {
         }
         try {
             TokenDetailsDTO dto = defaultApi.tokenGet();
+            if (log.isDebugEnabled()) {
+                log.debug("Successfully retrieved SAS token from endpoint: " + authEndpoint);
+            }
             return dto.getToken();
         } catch (FeignException.Unauthorized e) {
+            log.error("Authentication failed for endpoint: " + authEndpoint + ". Invalid/expired user token");
             throw new ConnectionUnrecoverableException(
                     "Invalid/expired user token. Please update apim.analytics"
                             + ".auth_token in configuration and restart the instance", e);
         } catch (RetryableException e) {
+            log.warn("Authentication endpoint " + authEndpoint + " is not reachable, connection will be retried");
             throw new ConnectionRecoverableException("Provided authentication endpoint " + authEndpoint + " is not "
                                                              + "reachable.");
         } catch (IllegalArgumentException e) {
             throw new ConnectionUnrecoverableException("Invalid apim.analytics configurations provided. Please update "
                                                                + "configurations and restart the instance.");
         } catch (FeignException.Forbidden e) {
+            log.warn("Publisher access forbidden for endpoint: " + authEndpoint + ", will retry");
             throw new ConnectionRecoverableException("Publisher has been temporarily revoked.");
         } catch (Exception e) {
             //we will retry for any other exception

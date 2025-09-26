@@ -37,11 +37,18 @@ public class MissedEventHandler extends TimerTask {
 
     @Override
     public void run() {
-        // clear the internal map of orgID-MoesifKey
+        log.info("Starting periodic Moesif key map refresh");
+        if (log.isDebugEnabled()) {
+            log.debug("Clearing Moesif key map");
+        }
         keyRetriever.clearMoesifKeyMap();
-        // clear the environment map
+        if (log.isDebugEnabled()) {
+            log.debug("Clearing environment map");
+        }
         keyRetriever.clearEnvMap();
-        // refresh the internal map of orgID-MoesifKey
+        if (log.isDebugEnabled()) {
+            log.debug("Refreshing Moesif key map from microservice");
+        }
         keyRetriever.initOrRefreshOrgIDMoesifKeyMap();
     }
 }
