@@ -71,6 +71,7 @@ public class MoesifKeyRetriever {
     public static synchronized MoesifKeyRetriever getInstance(String authUsername, String authPwd,
                                                               String moesifBasePath) {
         if (moesifKeyRetriever == null) {
+            log.info("Creating MoesifKeyRetriever singleton instance");
             return new MoesifKeyRetriever(authUsername, authPwd, moesifBasePath);
         }
         return moesifKeyRetriever;
@@ -128,6 +129,9 @@ public class MoesifKeyRetriever {
                 }
                 try {
                     response = callDetailResource(orgID);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Successfully retrieved Moesif key for organization: " + orgID);
+                    }
                     return response;
                 } catch (IOException | APICallException e) {
                     log.error("Retry attempt failed.", e);
@@ -146,6 +150,7 @@ public class MoesifKeyRetriever {
      */
     public void removeMoesifKeyFromMap(String orgID) {
         orgIDMoesifKeyMap.remove(orgID);
+        log.info("Removed Moesif key from map for organization: " + orgID);
     }
 
     /**
@@ -190,7 +195,7 @@ public class MoesifKeyRetriever {
                     updateMap(response.toString());
                 }
             } else if (responseCode >= 400 && responseCode < 500) {
-                log.error("Getting {} from the microservice.", responseCode);
+                log.warn("Received HTTP {} error from Moesif microservice during map refresh", responseCode);
             } else {
                 throw new APICallException("Getting " + responseCode + " from the Moesif microservice and retrying.");
             }
@@ -250,7 +255,7 @@ public class MoesifKeyRetriever {
                     return response.toString();
                 }
             } else if (responseCode >= 400 && responseCode < 500) {
-                log.error("Getting {} from the Moesif microservice.", responseCode);
+                log.warn("Received HTTP {} error from Moesif microservice for organization: " + orgID, responseCode);
                 return null;
             } else {
                 throw new APICallException("Getting " + responseCode + " from the Moesif microservice and retrying.");
@@ -278,6 +283,9 @@ public class MoesifKeyRetriever {
         String env = newKey.getEnv();
         orgIDMoesifKeyMap.put(orgID, moesifKey);
         orgIdEnvMap.put(orgID, env);
+        if (log.isDebugEnabled()) {
+            log.debug("Updated single Moesif key for organization: " + orgID);
+        }
     }
 
     private synchronized void updateMap(String response) {
@@ -303,6 +311,7 @@ public class MoesifKeyRetriever {
             orgIDMoesifKeyMap.put(orgID, moesifKey);
             orgIdEnvMap.put(orgID, env);
         }
+        log.info("Refreshed Moesif key map with " + newKeys.size() + " entries");
     }
 
     /**

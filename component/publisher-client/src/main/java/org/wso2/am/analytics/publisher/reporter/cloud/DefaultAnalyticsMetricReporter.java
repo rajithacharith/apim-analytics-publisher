@@ -132,6 +132,7 @@ public class DefaultAnalyticsMetricReporter extends AbstractMetricReporter {
             List<String> requiredProperties = DefaultInputValidator.getInstance().getConfigProperties();
             for (String property : requiredProperties) {
                 if (properties.get(property) == null || properties.get(property).isEmpty()) {
+                    log.error("Required configuration property is missing: " + property);
                     throw new MetricCreationException(property + " is missing in config data");
                 }
             }

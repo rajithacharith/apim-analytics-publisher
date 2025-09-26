@@ -46,6 +46,9 @@ class WSO2TokenCredential implements TokenCredential {
     private BackoffRetryCounter backoffRetryCounter;
 
     public WSO2TokenCredential(String authEndpoint, String authToken, Map<String, String> properties) {
+        if (log.isDebugEnabled()) {
+            log.debug("Initializing WSO2TokenCredential with endpoint: " + authEndpoint);
+        }
         this.authEndpoint = authEndpoint;
         this.authToken = authToken;
         this.properties = properties;
@@ -54,11 +57,15 @@ class WSO2TokenCredential implements TokenCredential {
 
     @Override
     public Mono<AccessToken> getToken(TokenRequestContext tokenRequestContext) {
-        log.debug("Trying to retrieving a new SAS token.");
+        if (log.isDebugEnabled()) {
+            log.debug("Trying to retrieve a new SAS token from: " + authEndpoint);
+        }
         try {
             String sasToken = AuthClient.getSASToken(this.authEndpoint, this.authToken, this.properties);
             backoffRetryCounter.reset();
-            log.debug("New SAS token retrieved.");
+            if (log.isDebugEnabled()) {
+                log.debug("Successfully retrieved new SAS token");
+            }
             // Using lower duration than actual.
             OffsetDateTime time = getExpirationTime(sasToken);
             return Mono.fromCallable(() -> new AccessToken(sasToken, time));
@@ -91,7 +98,7 @@ class WSO2TokenCredential implements TokenCredential {
                         long epochSeconds = Long.parseLong(expirationTimeStr);
                         return Instant.ofEpochSecond(epochSeconds).atOffset(ZoneOffset.UTC);
                     } catch (NumberFormatException e) {
-                        log.error("Invalid expiration time format in the SAS token.", e);
+                        log.error("Invalid expiration time format in SAS token: " + expirationTimeStr, e);
                         return OffsetDateTime.MAX;
                     }
                 })
