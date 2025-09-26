@@ -81,6 +81,8 @@ public class MoesifKeyRetriever {
      * Will refresh/refill the  orgID-MoesifKey map.
      */
     public void initOrRefreshOrgIDMoesifKeyMap() {
+        log.info("Initializing Moesif key map from microservice at: {}", 
+                moesifBasePath.replaceAll("[\r\n]", ""));
         int attempts = MoesifMicroserviceConstants.NUM_RETRY_ATTEMPTS;
         try {
             callListResource();
@@ -111,6 +113,9 @@ public class MoesifKeyRetriever {
      * @return Moesif Key corresponding orgID
      */
     public String getMoesifKey(String orgID) {
+        if (log.isDebugEnabled()) {
+            log.debug("Retrieving Moesif key for organization: {}", orgID.replaceAll("[\r\n]", ""));
+        }
         String response;
         int attempts = MoesifMicroserviceConstants.NUM_RETRY_ATTEMPTS;
         try {
@@ -188,6 +193,8 @@ public class MoesifKeyRetriever {
                         response.append(inputLine);
                     }
                     updateMap(response.toString());
+                    log.info("Successfully retrieved and updated {} organization key mappings from Moesif " 
+                            + "microservice", orgIDMoesifKeyMap.size());
                 }
             } else if (responseCode >= 400 && responseCode < 500) {
                 log.error("Getting {} from the microservice.", responseCode);

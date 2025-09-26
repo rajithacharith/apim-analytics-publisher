@@ -38,7 +38,11 @@ public class AuthClient {
 
     public static String getSASToken(String authEndpoint, String token, Map<String, String> properties)
             throws ConnectionRecoverableException, ConnectionUnrecoverableException {
-
+        
+        if (authEndpoint == null || token == null) {
+            throw new ConnectionUnrecoverableException("Authentication endpoint or token cannot be null");
+        }
+        
         String isProxyEnabled = properties.get(Constants.PROXY_ENABLE);
         DefaultApi defaultApi;
 
@@ -62,19 +66,21 @@ public class AuthClient {
             return dto.getToken();
         } catch (FeignException.Unauthorized e) {
             throw new ConnectionUnrecoverableException(
-                    "Invalid/expired user token. Please update apim.analytics"
-                            + ".auth_token in configuration and restart the instance", e);
+                    "Authentication failed - invalid or expired token for endpoint: " 
+                    + authEndpoint.replaceAll("[\r\n]", ""), e);
         } catch (RetryableException e) {
-            throw new ConnectionRecoverableException("Provided authentication endpoint " + authEndpoint + " is not "
-                                                             + "reachable.");
+            throw new ConnectionRecoverableException("Authentication endpoint unreachable: " 
+                    + authEndpoint.replaceAll("[\r\n]", ""));
         } catch (IllegalArgumentException e) {
-            throw new ConnectionUnrecoverableException("Invalid apim.analytics configurations provided. Please update "
-                                                               + "configurations and restart the instance.");
+            throw new ConnectionUnrecoverableException("Invalid authentication configuration for endpoint: " 
+                    + authEndpoint.replaceAll("[\r\n]", ""));
         } catch (FeignException.Forbidden e) {
-            throw new ConnectionRecoverableException("Publisher has been temporarily revoked.");
+            throw new ConnectionRecoverableException("Authentication forbidden - publisher temporarily revoked for " 
+                    + "endpoint: " + authEndpoint.replaceAll("[\r\n]", ""));
         } catch (Exception e) {
             //we will retry for any other exception
-            throw new ConnectionRecoverableException("Exception " + e.getClass() + " occurred.");
+            throw new ConnectionRecoverableException("Authentication failed with " + e.getClass().getSimpleName() 
+                    + " for endpoint: " + authEndpoint.replaceAll("[\r\n]", ""));
         }
     }
 }

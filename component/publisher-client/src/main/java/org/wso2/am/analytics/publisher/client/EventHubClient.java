@@ -121,8 +121,14 @@ public class EventHubClient implements Cloneable {
                         .replaceAll("[\r\n]", ""));
             }
             clientStatus = ClientStatus.CONNECTED;
-            log.info("[" + Thread.currentThread().getName().replaceAll("[\r\n]", "") + "] "
-                             + "- Eventhub client successfully connected.");
+            log.info("EventHub client successfully connected for endpoint: {}", 
+                    authEndpoint.replaceAll("[\r\n]", ""));
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] EventHub producer client initialized with retry options - maxRetries: {}, delay: {}ms", 
+                        Thread.currentThread().getName().replaceAll("[\r\n]", ""), 
+                        retryOptions.getMaxRetries(), 
+                        retryOptions.getDelay().toMillis());
+            }
             producerRetryCounter.reset();
             try {
                 threadBarrier.lock();
@@ -132,9 +138,9 @@ public class EventHubClient implements Cloneable {
             }
         } catch (ConnectionRecoverableException e) {
             clientStatus = ClientStatus.RETRYING;
-            log.error("Recoverable error occurred when creating Eventhub Client. Retry attempts will be made in "
-                              + producerRetryCounter.getTimeInterval().replaceAll("[\r\n]", "") + ". Reason :"
-                              + e.getMessage().replaceAll("[\r\n]", ""));
+            log.warn("EventHub client connection failed, retrying in {}. Endpoint: {}", 
+                    producerRetryCounter.getTimeInterval().replaceAll("[\r\n]", ""), 
+                    authEndpoint.replaceAll("[\r\n]", ""));
             if (log.isDebugEnabled()) {
                 log.debug("[{ " + Thread.currentThread().getName().replaceAll("[\r\n]", "") + " }] - "
                                   + "Recoverable error occurred when creating Eventhub Client using following "

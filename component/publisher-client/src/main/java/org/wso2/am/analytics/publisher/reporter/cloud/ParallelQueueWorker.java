@@ -42,10 +42,12 @@ public class ParallelQueueWorker implements Runnable {
     }
 
     public void run() {
+            log.info("Queue worker {} started for processing events", 
+                    Thread.currentThread().getName().replaceAll("[\r\n]", ""));
             if (log.isDebugEnabled()) {
-                log.debug(eventQueue.size() + " messages in queue before " +
-                                  Thread.currentThread().getName().replaceAll("[\r\n]", "")
-                                  + " worker has polled queue");
+                log.debug("{} messages in queue before worker {} has polled queue", 
+                        eventQueue.size(),
+                        Thread.currentThread().getName().replaceAll("[\r\n]", ""));
             }
             while (true) {
                 MetricEventBuilder eventBuilder;
@@ -61,7 +63,10 @@ public class ParallelQueueWorker implements Runnable {
                     log.error("Builder instance is not duly filled. Event building failed", e);
                     continue;
                 } catch (InterruptedException e) {
+                    log.info("Queue worker {} interrupted, shutting down", 
+                            Thread.currentThread().getName().replaceAll("[\r\n]", ""));
                     Thread.currentThread().interrupt();
+                    break;
                 } catch (Exception e) {
                     log.error("Analytics event sending failed. Event will be dropped", e);
                 }

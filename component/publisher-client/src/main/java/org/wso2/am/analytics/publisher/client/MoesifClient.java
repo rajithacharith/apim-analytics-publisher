@@ -113,8 +113,13 @@ public class MoesifClient extends AbstractMoesifClient {
     @Override
     public void publishBatch(List<MetricEventBuilder> builders) {
         if (builders == null || builders.isEmpty()) {
-            log.debug("No events to publish in batch");
+            if (log.isDebugEnabled()) {
+                log.debug("No events to publish in batch");
+            }
             return;
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("Publishing batch of {} events", builders.size());
         }
 
         Map<String, List<MetricEventBuilder>> eventsByOrg = groupEventsByOrganization(builders);
@@ -345,8 +350,13 @@ public class MoesifClient extends AbstractMoesifClient {
         }
 
         if (validEvents.isEmpty()) {
-            log.debug("No valid events to publish for organization: {}", orgId);
+            if (log.isDebugEnabled()) {
+                log.debug("No valid events to publish for organization: {}", orgId);
+            }
             return;
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("Publishing {} valid events for organization: {}", validEvents.size(), orgId);
         }
         MoesifAPIClient client = new MoesifAPIClient(moesifKey);
         APIController api = client.getAPI();
@@ -375,7 +385,7 @@ public class MoesifClient extends AbstractMoesifClient {
                 Map<String, Object> event = builder.build();
                 String orgId = (String) event.get(Constants.ORGANIZATION_ID);
                 if (orgId == null || orgId.isEmpty()) {
-                    log.warn("Skipping event with no organization ID");
+                    log.warn("Skipping event with missing organization ID");
                     continue;
                 }
                 eventsByOrg.computeIfAbsent(orgId, k -> new ArrayList<>()).add(builder);

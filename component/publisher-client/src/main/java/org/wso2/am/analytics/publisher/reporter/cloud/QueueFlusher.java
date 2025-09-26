@@ -18,6 +18,8 @@
 
 package org.wso2.am.analytics.publisher.reporter.cloud;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.wso2.am.analytics.publisher.client.EventHubClient;
 import org.wso2.am.analytics.publisher.reporter.MetricEventBuilder;
 
@@ -28,6 +30,7 @@ import java.util.concurrent.BlockingQueue;
  */
 public class QueueFlusher implements Runnable {
 
+    private static final Logger log = LogManager.getLogger(QueueFlusher.class);
     private final BlockingQueue<MetricEventBuilder> queue;
     private final EventHubClient client;
 
@@ -37,10 +40,20 @@ public class QueueFlusher implements Runnable {
     }
 
     @Override public void run() {
+        if (log.isDebugEnabled()) {
+            log.debug("Queue flusher running with {} events in queue", queue.size());
+        }
         if (queue.isEmpty()) {
             //For scenarios where no API invocation is happening additional check in the EventHubClient will stop
             // empty batch flushing
+            if (log.isDebugEnabled()) {
+                log.debug("Queue is empty, attempting to flush any remaining batched events");
+            }
             client.flushEvents();
+        } else {
+            if (log.isDebugEnabled()) {
+                log.debug("Queue is not empty ({} events), skipping flush operation", queue.size());
+            }
         }
     }
 }

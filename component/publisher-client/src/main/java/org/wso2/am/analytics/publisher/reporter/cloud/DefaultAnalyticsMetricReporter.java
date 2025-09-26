@@ -45,6 +45,7 @@ public class DefaultAnalyticsMetricReporter extends AbstractMetricReporter {
 
     public DefaultAnalyticsMetricReporter(Map<String, String> properties) throws MetricCreationException {
         super(properties);
+        log.info("Initializing default analytics metric reporter");
         int queueSize = Constants.DEFAULT_QUEUE_SIZE;
         int workerThreads = Constants.DEFAULT_WORKER_THREADS;
         int flushingDelay = Constants.DEFAULT_FLUSHING_DELAY;
@@ -62,6 +63,8 @@ public class DefaultAnalyticsMetricReporter extends AbstractMetricReporter {
         AmqpRetryOptions retryOptions = createRetryOptions(properties);
         EventHubClient client = new EventHubClient(authEndpoint, authToken, retryOptions, properties);
         eventQueue = new EventQueue(queueSize, workerThreads, client, flushingDelay);
+        log.info("Analytics metric reporter initialized with queue size: {}, worker threads: {}, flushing delay: {}ms", 
+                queueSize, workerThreads, flushingDelay);
     }
 
     private AmqpRetryOptions createRetryOptions(Map<String, String> properties) {

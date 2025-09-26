@@ -41,6 +41,7 @@ public class MoesifReporter extends AbstractMetricReporter {
 
     public MoesifReporter(Map<String, String> properties) throws MetricCreationException {
         super(properties);
+        log.info("Initializing Moesif reporter with configuration");
         int queueSize = Constants.DEFAULT_QUEUE_SIZE;
         int workerThreads = Constants.DEFAULT_WORKER_THREADS;
         if (properties.get(Constants.QUEUE_SIZE) != null) {
@@ -52,6 +53,8 @@ public class MoesifReporter extends AbstractMetricReporter {
         if (properties.get(Constants.TYPE).equals(Constants.MOESIF)) {
             String moesifKey = properties.get(Constants.MOESIF_KEY);
             this.eventQueue = new EventQueue(queueSize, workerThreads, moesifKey);
+            log.info("Moesif reporter initialized in direct mode with queue size: {}, worker threads: {}", 
+                    queueSize, workerThreads);
         } else {
             String moesifBasePath = properties.get(
                     MoesifMicroserviceConstants.MOESIF_PROTOCOL_WITH_FQDN_KEY) + properties.get(
@@ -66,6 +69,8 @@ public class MoesifReporter extends AbstractMetricReporter {
             // execute MissedEventHandler periodically.
             Timer timer = new Timer();
             timer.schedule(missedEventHandler, 0, MoesifMicroserviceConstants.PERIODIC_CALL_DELAY);
+            log.info("Moesif reporter initialized in microservice mode with queue size: {}, worker threads: {}", 
+                    queueSize, workerThreads);
         }
     }
 

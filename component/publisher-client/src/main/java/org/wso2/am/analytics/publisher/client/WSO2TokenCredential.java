@@ -54,17 +54,23 @@ class WSO2TokenCredential implements TokenCredential {
 
     @Override
     public Mono<AccessToken> getToken(TokenRequestContext tokenRequestContext) {
-        log.debug("Trying to retrieving a new SAS token.");
+        if (log.isDebugEnabled()) {
+            log.debug("Retrieving SAS token from authentication endpoint: {}", 
+                    authEndpoint.replaceAll("[\r\n]", ""));
+        }
         try {
             String sasToken = AuthClient.getSASToken(this.authEndpoint, this.authToken, this.properties);
             backoffRetryCounter.reset();
-            log.debug("New SAS token retrieved.");
+            if (log.isDebugEnabled()) {
+                log.debug("SAS token retrieved successfully with expiration time");
+            }
             // Using lower duration than actual.
             OffsetDateTime time = getExpirationTime(sasToken);
             return Mono.fromCallable(() -> new AccessToken(sasToken, time));
         } catch (ConnectionRecoverableException e) {
-            log.error("Error occurred when retrieving SAS token. Connection will be retried in "
-                              + backoffRetryCounter.getTimeInterval().replaceAll("[\r\n]", ""), e);
+            log.warn("SAS token retrieval failed, retrying in {}. Endpoint: {}", 
+                    backoffRetryCounter.getTimeInterval().replaceAll("[\r\n]", ""),
+                    authEndpoint.replaceAll("[\r\n]", ""));
             try {
                 Thread.sleep(backoffRetryCounter.getTimeIntervalMillis());
             } catch (InterruptedException interruptedException) {
