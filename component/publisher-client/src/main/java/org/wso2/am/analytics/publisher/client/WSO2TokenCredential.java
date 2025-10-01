@@ -54,20 +54,21 @@ class WSO2TokenCredential implements TokenCredential {
 
     @Override
     public Mono<AccessToken> getToken(TokenRequestContext tokenRequestContext) {
-        log.debug("Trying to retrieving a new SAS token.");
+        log.debug("Attempting to retrieve new SAS token from endpoint: {}", authEndpoint);
         try {
             String sasToken = AuthClient.getSASToken(this.authEndpoint, this.authToken, this.properties);
             backoffRetryCounter.reset();
-            log.debug("New SAS token retrieved.");
+            log.info("New SAS token retrieved successfully");
             // Using lower duration than actual.
             OffsetDateTime time = getExpirationTime(sasToken);
             return Mono.fromCallable(() -> new AccessToken(sasToken, time));
         } catch (ConnectionRecoverableException e) {
-            log.error("Error occurred when retrieving SAS token. Connection will be retried in "
-                              + backoffRetryCounter.getTimeInterval().replaceAll("[\r\n]", ""), e);
+            log.error("Recoverable error when retrieving SAS token from endpoint: {}. Retrying in {}", 
+                      authEndpoint, backoffRetryCounter.getTimeInterval().replaceAll("[\r\n]", ""), e);
             try {
                 Thread.sleep(backoffRetryCounter.getTimeIntervalMillis());
             } catch (InterruptedException interruptedException) {
+                log.warn("Token retrieval retry interrupted");
                 Thread.currentThread().interrupt();
             }
             backoffRetryCounter.increment();
@@ -75,7 +76,7 @@ class WSO2TokenCredential implements TokenCredential {
         } catch (ConnectionUnrecoverableException e) {
             //Do not pass the exception. Publishing threads will encounter authentication issue and then try to
             // reinitialize publisher.
-            log.error("Error occurred when retrieving SAS token.", e);
+            log.error("Unrecoverable error when retrieving SAS token from endpoint: {}", authEndpoint, e);
             backoffRetryCounter.reset();
             return Mono.error(e);
         }
@@ -89,9 +90,13 @@ class WSO2TokenCredential implements TokenCredential {
                 .map((expirationTimeStr) -> {
                     try {
                         long epochSeconds = Long.parseLong(expirationTimeStr);
-                        return Instant.ofEpochSecond(epochSeconds).atOffset(ZoneOffset.UTC);
+                        OffsetDateTime expirationTime = Instant.ofEpochSecond(epochSeconds).atOffset(ZoneOffset.UTC);
+                        if (log.isDebugEnabled()) {
+                            log.debug("SAS token expiration time parsed: {}", expirationTime);
+                        }
+                        return expirationTime;
                     } catch (NumberFormatException e) {
-                        log.error("Invalid expiration time format in the SAS token.", e);
+                        log.error("Invalid expiration time format in SAS token: {}", expirationTimeStr, e);
                         return OffsetDateTime.MAX;
                     }
                 })

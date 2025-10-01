@@ -81,26 +81,33 @@ public class MoesifKeyRetriever {
      * Will refresh/refill the  orgID-MoesifKey map.
      */
     public void initOrRefreshOrgIDMoesifKeyMap() {
+        log.info("Initiating Moesif key map refresh");
         int attempts = MoesifMicroserviceConstants.NUM_RETRY_ATTEMPTS;
         try {
             callListResource();
+            log.info("Moesif key map refreshed successfully");
         } catch (IOException | APICallException ex) {
             // TODO: Separate retry logic to a separate class.
-            log.error("First attempt of refreshing internal map failed,retrying.", ex);
+            log.error("First attempt of refreshing internal map failed, retrying. Remaining attempts: {}", 
+                      attempts, ex);
 
             while (attempts > 0) {
                 attempts--;
                 try {
                     Thread.sleep(MoesifMicroserviceConstants.TIME_TO_WAIT);
                 } catch (InterruptedException e) {
+                    log.warn("Map refresh retry interrupted");
                     throw new RuntimeException(e);
                 }
                 try {
                     callListResource();
+                    log.info("Moesif key map refreshed successfully on retry");
+                    return;
                 } catch (IOException | APICallException e) {
-                    log.error("Retry attempt failed.", e);
+                    log.error("Retry attempt failed. Remaining attempts: {}", attempts, e);
                 }
             }
+            log.error("All retry attempts exhausted for Moesif key map refresh");
         }
     }
 
@@ -111,28 +118,39 @@ public class MoesifKeyRetriever {
      * @return Moesif Key corresponding orgID
      */
     public String getMoesifKey(String orgID) {
+        if (log.isDebugEnabled()) {
+            log.debug("Retrieving Moesif key for organization: {}", orgID);
+        }
         String response;
         int attempts = MoesifMicroserviceConstants.NUM_RETRY_ATTEMPTS;
         try {
             response = callDetailResource(orgID);
+            if (response != null) {
+                log.debug("Moesif key retrieved successfully for organization: {}", orgID);
+            }
         } catch (IOException | APICallException ex) {
             // TODO: Separate retry logic to a separate class.
-            log.error("First attempt of single moesif key fetch failed, retrying.", ex);
+            log.error("First attempt of single moesif key fetch failed for organization: {}. Retrying. " +
+                      "Remaining attempts: {}", orgID, attempts, ex);
 
             while (attempts > 0) {
                 attempts--;
                 try {
                     Thread.sleep(MoesifMicroserviceConstants.TIME_TO_WAIT);
                 } catch (InterruptedException e) {
+                    log.warn("Moesif key retrieval retry interrupted for organization: {}", orgID);
                     throw new RuntimeException(e);
                 }
                 try {
                     response = callDetailResource(orgID);
+                    log.debug("Moesif key retrieved successfully for organization: {} on retry", orgID);
                     return response;
                 } catch (IOException | APICallException e) {
-                    log.error("Retry attempt failed.", e);
+                    log.error("Retry attempt failed for organization: {}. Remaining attempts: {}", 
+                              orgID, attempts, e);
                 }
             }
+            log.error("All retry attempts exhausted for Moesif key retrieval for organization: {}", orgID);
             response = null;
         }
         return response;
@@ -145,7 +163,12 @@ public class MoesifKeyRetriever {
      * @param orgID
      */
     public void removeMoesifKeyFromMap(String orgID) {
-        orgIDMoesifKeyMap.remove(orgID);
+        if (orgIDMoesifKeyMap.containsKey(orgID)) {
+            orgIDMoesifKeyMap.remove(orgID);
+            log.info("Moesif key removed from map for organization: {}", orgID);
+        } else {
+            log.warn("Attempted to remove non-existent Moesif key for organization: {}", orgID);
+        }
     }
 
     /**
@@ -188,10 +211,12 @@ public class MoesifKeyRetriever {
                         response.append(inputLine);
                     }
                     updateMap(response.toString());
+                    log.debug("Successfully fetched Moesif keys from microservice");
                 }
             } else if (responseCode >= 400 && responseCode < 500) {
-                log.error("Getting {} from the microservice.", responseCode);
+                log.error("Client error {} received from Moesif microservice", responseCode);
             } else {
+                log.error("Server error {} received from Moesif microservice", responseCode);
                 throw new APICallException("Getting " + responseCode + " from the Moesif microservice and retrying.");
             }
         } finally {
