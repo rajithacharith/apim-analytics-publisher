@@ -42,35 +42,45 @@ public class ParallelQueueWorker implements Runnable {
     }
 
     public void run() {
+        String workerName = Thread.currentThread().getName();
+        log.info("Queue worker {} started", workerName);
+        
+        while (true) {
             if (log.isDebugEnabled()) {
-                log.debug(eventQueue.size() + " messages in queue before " +
-                                  Thread.currentThread().getName().replaceAll("[\r\n]", "")
-                                  + " worker has polled queue");
+                log.debug("Queue worker {}: {} events in queue before processing", workerName, eventQueue.size());
             }
-            while (true) {
-                MetricEventBuilder eventBuilder;
-                String event;
-                try {
-                    eventBuilder = eventQueue.take();
-                    if (eventBuilder != null) {
-                        Map<String, Object> eventMap = eventBuilder.build();
-                        event = new Gson().toJson(eventMap);
-                        client.sendEvent(event);
+            
+            MetricEventBuilder eventBuilder;
+            String event;
+            try {
+                eventBuilder = eventQueue.take();
+                if (eventBuilder != null) {
+                    Map<String, Object> eventMap = eventBuilder.build();
+                    event = new Gson().toJson(eventMap);
+                    client.sendEvent(event);
+                    
+                    if (log.isDebugEnabled()) {
+                        log.debug("Queue worker {}: Event processed successfully", workerName);
                     }
-                } catch (MetricReportingException e) {
-                    log.error("Builder instance is not duly filled. Event building failed", e);
-                    continue;
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                } catch (Exception e) {
-                    log.error("Analytics event sending failed. Event will be dropped", e);
                 }
-
-                if (log.isDebugEnabled()) {
-                    log.debug(eventQueue.size() + " messages in queue after " +
-                                      Thread.currentThread().getName().replaceAll("[\r\n]", "")
-                                      + " worker has finished work");
-                }
+            } catch (MetricReportingException e) {
+                log.error("Queue worker {}: Event builder instance not properly configured. Event building failed", 
+                          workerName, e);
+                continue;
+            } catch (InterruptedException e) {
+                log.info("Queue worker {} interrupted", workerName);
+                Thread.currentThread().interrupt();
+                break;
+            } catch (Exception e) {
+                log.error("Queue worker {}: Analytics event sending failed. Event will be dropped", workerName, e);
             }
+
+            if (log.isDebugEnabled()) {
+                log.debug("Queue worker {}: {} events remaining in queue after processing", 
+                          workerName, eventQueue.size());
+            }
+        }
+        
+        log.info("Queue worker {} stopped", workerName);
     }
 }
