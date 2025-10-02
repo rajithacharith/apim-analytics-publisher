@@ -71,9 +71,9 @@ public class EventQueue {
             if (!eventQueue.offer(builder)) {
                 int count = failureCount.incrementAndGet();
                 if (count == 1) {
-                    log.error("Event queue is full. Starting to drop analytics events.");
+                    log.error("Event queue is full. Starting to drop analytics events");
                 } else if (count % 1000 == 0) {
-                    log.error("Event queue is full. " + count + " events dropped so far");
+                    log.error("Event queue is full. {} events dropped so far", count);
                 }
             }
         } catch (RejectedExecutionException e) {

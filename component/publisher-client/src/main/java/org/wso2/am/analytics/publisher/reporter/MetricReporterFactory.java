@@ -56,8 +56,8 @@ public class MetricReporterFactory {
             }
         }
         MetricReporter reporterInstance = reporterRegistry.get(Constants.DEFAULT_REPORTER);
-        log.info("Metric Reporter of type " + reporterInstance.getClass().toString().replaceAll("[\r\n]", "") +
-                " is already created. Hence returning same instance");
+        log.info("Metric Reporter of type {} is already created. Hence returning same instance",
+                reporterInstance.getClass().toString());
         return reporterInstance;
     }
 
@@ -73,8 +73,8 @@ public class MetricReporterFactory {
         }
 
         MetricReporter reporterInstance = reporterRegistry.get(Constants.ELK_REPORTER);
-        log.info("Metric Reporter of type " + reporterInstance.getClass().toString().replaceAll("[\r\n]", "") +
-                " is already created. Hence returning same instance");
+        log.info("Metric Reporter of type {} is already created. Hence returning same instance",
+                reporterInstance.getClass().toString());
         return reporterInstance;
     }
 
@@ -105,8 +105,8 @@ public class MetricReporterFactory {
             }
         }
         MetricReporter reporterInstance = reporterRegistry.get(fullyQualifiedClassName);
-        log.info("Metric Reporter of type " + reporterInstance.getClass().toString().replaceAll("[\r\n]", "") +
-                " is already created. Hence returning same instance");
+        log.info("Metric Reporter of type {} is already created. Hence returning same instance",
+                reporterInstance.getClass().toString());
         return reporterInstance;
     }
 

@@ -37,11 +37,13 @@ public class MissedEventHandler extends TimerTask {
 
     @Override
     public void run() {
+        log.debug("Starting periodic refresh of Moesif key map");
         // clear the internal map of orgID-MoesifKey
         keyRetriever.clearMoesifKeyMap();
         // clear the environment map
         keyRetriever.clearEnvMap();
         // refresh the internal map of orgID-MoesifKey
         keyRetriever.initOrRefreshOrgIDMoesifKeyMap();
+        log.debug("Completed periodic refresh of Moesif key map");
     }
 }

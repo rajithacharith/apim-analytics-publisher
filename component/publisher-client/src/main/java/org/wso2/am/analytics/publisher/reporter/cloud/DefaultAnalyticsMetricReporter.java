@@ -75,8 +75,8 @@ public class DefaultAnalyticsMetricReporter extends AbstractMetricReporter {
             if (tempMaxRetries > 0) {
                 maxRetries = tempMaxRetries;
             } else {
-                log.warn("Provided " + Constants.EVENTHUB_CLIENT_MAX_RETRIES + "value is less than 0 and not "
-                                 + "acceptable. Hence using the default value.");
+                log.warn("Provided {} value is less than 0 and not acceptable. Hence using the default value",
+                        Constants.EVENTHUB_CLIENT_MAX_RETRIES);
             }
         }
         if (properties.get(Constants.EVENTHUB_CLIENT_DELAY) != null) {
@@ -84,8 +84,8 @@ public class DefaultAnalyticsMetricReporter extends AbstractMetricReporter {
             if (tempDelay > 0) {
                 delay = tempDelay;
             } else {
-                log.warn("Provided " + Constants.EVENTHUB_CLIENT_DELAY + "value is less than 0 and not acceptable. "
-                                 + "Hence using the default value.");
+                log.warn("Provided {} value is less than 0 and not acceptable. Hence using the default value",
+                        Constants.EVENTHUB_CLIENT_DELAY);
             }
         }
         if (properties.get(Constants.EVENTHUB_CLIENT_MAX_DELAY) != null) {
@@ -93,8 +93,8 @@ public class DefaultAnalyticsMetricReporter extends AbstractMetricReporter {
             if (tempMaxDelay > 0) {
                 maxDelay = tempMaxDelay;
             } else {
-                log.warn("Provided " + Constants.EVENTHUB_CLIENT_MAX_DELAY + "value is less than 0 and not acceptable. "
-                                 + "Hence using the default value.");
+                log.warn("Provided {} value is less than 0 and not acceptable. Hence using the default value",
+                        Constants.EVENTHUB_CLIENT_MAX_DELAY);
             }
         }
         if (properties.get(Constants.EVENTHUB_CLIENT_TRY_TIMEOUT) != null) {
@@ -102,8 +102,8 @@ public class DefaultAnalyticsMetricReporter extends AbstractMetricReporter {
             if (tempTryTimeout > 0) {
                 tryTimeout = tempTryTimeout;
             } else {
-                log.warn("Provided " + Constants.EVENTHUB_CLIENT_TRY_TIMEOUT + "value is less than 0 and not "
-                                 + "acceptable. Hence using the default value.");
+                log.warn("Provided {} value is less than 0 and not acceptable. Hence using the default value",
+                        Constants.EVENTHUB_CLIENT_TRY_TIMEOUT);
             }
         }
         if (properties.get(Constants.EVENTHUB_CLIENT_RETRY_MODE) != null) {
@@ -113,8 +113,8 @@ public class DefaultAnalyticsMetricReporter extends AbstractMetricReporter {
             } else if (tempRetryMode.equals(Constants.EXPONENTIAL)) {
                 retryMode = AmqpRetryMode.EXPONENTIAL;
             } else {
-                log.warn("Provided " + Constants.EVENTHUB_CLIENT_RETRY_MODE + "value is not supported. Hence will "
-                                 + "using the default value.");
+                log.warn("Provided {} value is not supported. Hence using the default value",
+                        Constants.EVENTHUB_CLIENT_RETRY_MODE);
             }
         }
         return new AmqpRetryOptions()

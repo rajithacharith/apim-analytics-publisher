@@ -85,7 +85,9 @@ public class ParallelQueueWorker implements Runnable {
                     lastBatchTime = currentBatchTime;
                 }
             } catch (InterruptedException e) {
+                log.debug("Queue worker thread interrupted, exiting");
                 Thread.currentThread().interrupt();
+                break;
             } catch (Exception e) {
                 log.error("Analytics event sending failed. Event will be dropped", e);
             }

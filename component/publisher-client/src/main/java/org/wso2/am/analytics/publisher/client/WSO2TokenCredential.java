@@ -63,8 +63,8 @@ class WSO2TokenCredential implements TokenCredential {
             OffsetDateTime time = getExpirationTime(sasToken);
             return Mono.fromCallable(() -> new AccessToken(sasToken, time));
         } catch (ConnectionRecoverableException e) {
-            log.error("Error occurred when retrieving SAS token. Connection will be retried in "
-                              + backoffRetryCounter.getTimeInterval().replaceAll("[\r\n]", ""), e);
+            log.error("Error occurred when retrieving SAS token. Connection will be retried in {}",
+                    backoffRetryCounter.getTimeInterval(), e);
             try {
                 Thread.sleep(backoffRetryCounter.getTimeIntervalMillis());
             } catch (InterruptedException interruptedException) {

@@ -99,8 +99,10 @@ public class EventHubClient implements Cloneable {
 
     private void createProducerWithRetry(String authEndpoint, String authToken, AmqpRetryOptions retryOptions,
                                          boolean createBatch, Map<String, String> properties) {
-        log.debug("[{ " + Thread.currentThread().getName().replaceAll("[\r\n]", "") + " }] "
-                          + "- Creating Eventhub client instance.");
+        if (log.isDebugEnabled()) {
+            log.debug("[{ " + Thread.currentThread().getName().replaceAll("[\r\n]", "") + " }] "
+                    + "- Creating Eventhub client instance.");
+        }
         try {
             if (producer != null) {
                 producer.close();
@@ -121,8 +123,7 @@ public class EventHubClient implements Cloneable {
                         .replaceAll("[\r\n]", ""));
             }
             clientStatus = ClientStatus.CONNECTED;
-            log.info("[" + Thread.currentThread().getName().replaceAll("[\r\n]", "") + "] "
-                             + "- Eventhub client successfully connected.");
+            log.info("Eventhub client successfully connected");
             producerRetryCounter.reset();
             try {
                 threadBarrier.lock();
@@ -174,8 +175,10 @@ public class EventHubClient implements Cloneable {
                         producer.send(batch);
                         batch = createBatchWithRetry();
                         isAdded = batch.tryAdd(eventData);
-                        log.debug("[{ " + Thread.currentThread().getName().replaceAll("[\r\n]", "") + " }] "
-                                          + "- Published " + size + " events to Analytics cluster.");
+                        if (log.isDebugEnabled()) {
+                            log.debug("[{ " + Thread.currentThread().getName().replaceAll("[\r\n]", "") + " }] "
+                                    + "- Published " + size + " events to Analytics cluster.");
+                        }
 
                     } catch (AmqpException e) {
                         if (isAuthenticationFailure(e)) {
@@ -200,10 +203,12 @@ public class EventHubClient implements Cloneable {
                             //For any other exception
                             log.error("AMQP error occurred while publishing Event Data Batch. Producer client will "
                                               + "be re-initialized. Events may be lost in the process.");
-                            log.debug("[{ " + Thread.currentThread().getName().replaceAll("[\r\n]", "") + " }] "
-                                              + "- AMQP error occurred while "
-                                              + "publishing Event Data Batch. Producer client will "
-                                              + "be re-initialized. Events may be lost in the process.", e);
+                            if (log.isDebugEnabled()) {
+                                log.debug("[{ " + Thread.currentThread().getName().replaceAll("[\r\n]", "") + " }] "
+                                        + "- AMQP error occurred while "
+                                        + "publishing Event Data Batch. Producer client will "
+                                        + "be re-initialized. Events may be lost in the process.", e);
+                            }
                             this.clientStatus = ClientStatus.RETRYING;
                             createProducerWithRetry(authEndpoint, authToken, retryOptions, true, properties);
                             sendEvent(event);
@@ -219,10 +224,12 @@ public class EventHubClient implements Cloneable {
                             //For any other exception
                             log.error("Unknown error occurred while publishing Event Data Batch. Producer client will "
                                               + "be re-initialized. Events may be lost in the process.");
-                            log.debug("[{ " + Thread.currentThread().getName().replaceAll("[\r\n]", "") + " }] "
-                                              + "- Unknown error occurred while publishing Event Data Batch. "
-                                              + "Producer client will "
-                                              + "be re-initialized. Events may be lost in the process.", e);
+                            if (log.isDebugEnabled()) {
+                                log.debug("[{ " + Thread.currentThread().getName().replaceAll("[\r\n]", "") + " }] "
+                                        + "- Unknown error occurred while publishing Event Data Batch. "
+                                        + "Producer client will "
+                                        + "be re-initialized. Events may be lost in the process.", e);
+                            }
                             this.clientStatus = ClientStatus.RETRYING;
                             createProducerWithRetry(authEndpoint, authToken, retryOptions, true, properties);
                             sendEvent(event);
@@ -277,8 +284,10 @@ public class EventHubClient implements Cloneable {
     }
 
     private EventDataBatch createBatchWithRetry() {
-        log.debug("[{ " + Thread.currentThread().getName().replaceAll("[\r\n]", "")
-                          + " }] Creating Event Data Batch");
+        if (log.isDebugEnabled()) {
+            log.debug("[{ " + Thread.currentThread().getName().replaceAll("[\r\n]", "")
+                    + " }] Creating Event Data Batch");
+        }
         try {
             EventDataBatch batch = producer.createBatch();
             eventBatchRetryCounter.reset();
@@ -303,8 +312,10 @@ public class EventHubClient implements Cloneable {
                         int size = batch.getCount();
                         producer.send(batch);
                         batch = createBatchWithRetry();
-                        log.debug("[{ " + Thread.currentThread().getName().replaceAll("[\r\n]", "") + " }] "
-                                          + "Flushed " + size + " events to Analytics cluster.");
+                        if (log.isDebugEnabled()) {
+                            log.debug("[{ " + Thread.currentThread().getName().replaceAll("[\r\n]", "") + " }] "
+                                    + "Flushed " + size + " events to Analytics cluster.");
+                        }
                     } catch (Exception e) {
                         if (e instanceof AmqpException && isAuthenticationFailure((AmqpException) e)) {
                             log.error("Marked client status as FLUSHING_FAILED due to AMQP authentication failure.");
@@ -320,18 +331,22 @@ public class EventHubClient implements Cloneable {
                         log.error("Event flushing operation failed. Will be retried again according to the configured "
                                           + "client.flushing.delay. Error will be handled by publishing threads once "
                                           + "Event Data Batch is filled.");
-                        log.debug("[{ " + Thread.currentThread().getName().replaceAll("[\r\n]", "") + " }] "
-                                          + "Event flushing operation failed. Will be retried again according to the "
-                                          + "configured client.flushing.delay. Error will be handled by publishing "
-                                          + "threads once Event Data Batch is filled.", e);
+                        if (log.isDebugEnabled()) {
+                            log.debug("[{ " + Thread.currentThread().getName().replaceAll("[\r\n]", "") + " }] "
+                                    + "Event flushing operation failed. Will be retried again according to the "
+                                    + "configured client.flushing.delay. Error will be handled by publishing "
+                                    + "threads once Event Data Batch is filled.", e);
+                        }
                         //Dont do anything for any exception. If it is recoverable exception next run will succeed.
                         //If not recoverable then next run will be filtered by if condition
                     } finally {
                         publishingLock.unlock();
                     }
                 } else {
-                    log.debug("[{ " + Thread.currentThread().getName().replaceAll("[\r\n]", "") + " }] Event "
-                               + "flushing operation aborted as publisher threads are trying to send events");
+                    if (log.isDebugEnabled()) {
+                        log.debug("[{ " + Thread.currentThread().getName().replaceAll("[\r\n]", "") + " }] Event "
+                                + "flushing operation aborted as publisher threads are trying to send events");
+                    }
                 }
         } else {
             if (log.isDebugEnabled()) {
