@@ -84,9 +84,10 @@ public class MoesifKeyRetriever {
         int attempts = MoesifMicroserviceConstants.NUM_RETRY_ATTEMPTS;
         try {
             callListResource();
+            log.debug("Successfully refreshed internal orgID-MoesifKey map");
         } catch (IOException | APICallException ex) {
             // TODO: Separate retry logic to a separate class.
-            log.error("First attempt of refreshing internal map failed,retrying.", ex);
+            log.debug("First attempt of refreshing internal map failed, retrying", ex);
 
             while (attempts > 0) {
                 attempts--;
@@ -97,10 +98,13 @@ public class MoesifKeyRetriever {
                 }
                 try {
                     callListResource();
+                    log.debug("Successfully refreshed internal orgID-MoesifKey map after retry");
+                    return;
                 } catch (IOException | APICallException e) {
-                    log.error("Retry attempt failed.", e);
+                    log.error("Retry attempt failed", e);
                 }
             }
+            log.error("Failed to refresh internal orgID-MoesifKey map after all retry attempts");
         }
     }
 
@@ -115,9 +119,13 @@ public class MoesifKeyRetriever {
         int attempts = MoesifMicroserviceConstants.NUM_RETRY_ATTEMPTS;
         try {
             response = callDetailResource(orgID);
+            if (response != null) {
+                log.debug("Successfully retrieved Moesif key for organization: {}", orgID);
+            }
+            return response;
         } catch (IOException | APICallException ex) {
             // TODO: Separate retry logic to a separate class.
-            log.error("First attempt of single moesif key fetch failed, retrying.", ex);
+            log.debug("First attempt of single moesif key fetch failed, retrying", ex);
 
             while (attempts > 0) {
                 attempts--;
@@ -128,14 +136,17 @@ public class MoesifKeyRetriever {
                 }
                 try {
                     response = callDetailResource(orgID);
+                    if (response != null) {
+                        log.debug("Successfully retrieved Moesif key for organization: {} after retry", orgID);
+                    }
                     return response;
                 } catch (IOException | APICallException e) {
-                    log.error("Retry attempt failed.", e);
+                    log.error("Retry attempt failed", e);
                 }
             }
-            response = null;
+            log.error("Failed to retrieve Moesif key for organization: {} after all retry attempts", orgID);
+            return null;
         }
-        return response;
     }
 
     /**
@@ -160,9 +171,7 @@ public class MoesifKeyRetriever {
         try {
             obj = new URL(url);
         } catch (MalformedURLException ex) {
-            log.error("Failed calling Moesif microservice. Attempted to call url: {}",
-                    url.replaceAll("[\r\n]", ""),
-                    ex.getMessage().replaceAll("[\r\n]", ""));
+            log.warn("Failed calling Moesif microservice due to invalid URL: {}", url.replaceAll("[\r\n]", ""));
             return;
         }
         String authHeaderValue = getAuthHeader(msAuthUsername, msAuthPwd);
@@ -217,15 +226,14 @@ public class MoesifKeyRetriever {
             url = url + "/" + "?" + MoesifMicroserviceConstants.QUERY_PARAM + "=" +
                     orgID;
         } else {
-            log.error("Failed calling Moesif microservice. Organization ID cannot be empty");
+            log.warn("Failed calling Moesif microservice. Organization ID cannot be empty");
             return null;
         }
         final URL obj;
         try {
             obj = new URL(url);
         } catch (MalformedURLException ex) {
-            log.error("Failed calling Moesif microservice. Attempted to call url: {}", url.replaceAll("[\r\n]", ""),
-                    ex.getMessage().replaceAll("[\r\n]", ""));
+            log.warn("Failed calling Moesif microservice due to invalid URL: {}", url.replaceAll("[\r\n]", ""));
             return null;
         }
         String authHeaderValue = getAuthHeader(msAuthUsername, msAuthPwd);

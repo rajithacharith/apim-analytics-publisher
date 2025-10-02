@@ -61,7 +61,9 @@ public class ParallelQueueWorker implements Runnable {
                     log.error("Builder instance is not duly filled. Event building failed", e);
                     continue;
                 } catch (InterruptedException e) {
+                    log.debug("Queue worker thread interrupted, exiting");
                     Thread.currentThread().interrupt();
+                    break;
                 } catch (Exception e) {
                     log.error("Analytics event sending failed. Event will be dropped", e);
                 }

@@ -106,7 +106,7 @@ public class MoesifClient extends AbstractMoesifClient {
         try {
             api.createEventAsync(buildEventResponse(event), callBack);
         } catch (IOException e) {
-            log.error("Analytics event sending failed. Event will be dropped", e);
+            throw new MetricReportingException("Analytics event sending failed. Event will be dropped", e);
         }
     }
 
@@ -256,18 +256,18 @@ public class MoesifClient extends AbstractMoesifClient {
                 if (HttpStatusHelper.shouldRetry(statusCode)) {
                     log.error("{} publishing failed for organization: {}. Moesif returned {}. Retrying",
                             eventType,
-                            orgId.replaceAll("[\r\n]", ""),
-                            String.valueOf(statusCode).replaceAll("[\r\n]", ""));
+                            LogSanitizer.sanitize(orgId),
+                            LogSanitizer.sanitize(String.valueOf(statusCode)));
                     retryAction.run();
                 } else if (HttpStatusHelper.isClientError(statusCode)) {
                     log.error("{} publishing failed for organization: {} due to error: {}",
                             eventType,
-                            orgId.replaceAll("[\r\n]", ""),
-                            error.getMessage().replaceAll("[\r\n]", ""));
+                            LogSanitizer.sanitize(orgId),
+                            LogSanitizer.sanitize(error.getMessage()));
                 } else {
                     log.error("{} publishing failed for organization: {}. Retrying.",
                             eventType,
-                            orgId.replaceAll("[\r\n]", ""));
+                            LogSanitizer.sanitize(orgId));
                     retryAction.run();
                 }
             }
@@ -287,7 +287,7 @@ public class MoesifClient extends AbstractMoesifClient {
             }
         } else if (currentAttempt == 0) {
             log.error("Failed all retrying attempts. Event will be dropped for organization {}",
-                    orgId.replaceAll("[\r\n]", ""));
+                    LogSanitizer.sanitize(orgId));
         }
     }
     private void doRetry(String orgId, MetricEventBuilder builder) {
@@ -306,7 +306,7 @@ public class MoesifClient extends AbstractMoesifClient {
             }
         } else if (currentAttempt == 0) {
             log.error("Failed all retrying attempts. Event will be dropped for organization {}",
-                    orgId.replaceAll("[\r\n]", ""));
+                    LogSanitizer.sanitize(orgId));
         }
     }
     /**
@@ -361,7 +361,7 @@ public class MoesifClient extends AbstractMoesifClient {
                 api.createEventsBatchAsync(validEvents, callBack);
             }
         } catch (IOException e) {
-            log.error("Analytics event sending failed for organization {}", orgId);
+            log.error("Analytics event sending failed for organization {}", LogSanitizer.sanitize(orgId), e);
         }
     }
     /**
